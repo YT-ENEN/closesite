@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>出發吧麥芬</title>
+    <link rel="icon" href="https://yt-enen.github.io/closesite/XHD.ico" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .navbar { margin-bottom: 20px; }
+        .navbar-brand img { max-height: 40px; } /* 設置圖片最大高度 */
+        .nav-link {
+            position: relative;
+            padding-bottom: 5px;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            left: 0;
+            bottom: 0;
+            background-color: currentColor;
+            transition: width 0.3s;
+        }
+        .nav-link:hover::after, .nav-link:focus::after {
+            width: 100%;
+        }
+        .nav-link.color::after { background-color: #9F7F6C; }
+        .carousel-item { height: 550px; }
+        .carousel-item img { height: 100%; width: 100%; object-fit: contain; } /* 確保圖片按比例縮小 */
+        .game-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .game-image {
+            background-color: rgb(110, 100, 82);
+            width: 100%;
+            padding-top: 100%; /* 使其成为正方形 */
+            position: relative;
+            border-radius: 15px; /* 添加圆角 */
+            overflow: hidden; /* 确保图片不超出圆角边界 */
+        }
+        .game-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            margin: auto;
+        }
+        .game-name {
+            background-color: #dbb17f;
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            font-size: 20px;
+            color: white;
+            margin-top: 10px;
+            border-radius: 15px; /* 添加圆角 */
+        }
+        .game-button {
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            background-color: #9F7F6C;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 15px; /* 添加圆角 */
+        }
+        .game-button:hover {
+            background-color: #d1d1d1;
+            color: #000;
+        }
+        .game-info {
+            background-color: #dbb17f;
+            padding: 20px;
+            color: rgb(255, 255, 255);
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 15px; /* 添加圆角 */
+        }
+        .game-info table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            border-radius: 15px; /* 添加圆角 */
+            overflow: hidden; /* 确保表格内容不超出圆角边界 */
+        }
+        .game-info table, .game-info th, .game-info td {
+            border: 2px solid rgb(255, 255, 255);
+        }
+        .game-info th, .game-info td {
+            padding: 15px;
+            text-align: center;
+        }
+        .update-time {
+            text-align: right;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #fff;
+        }
+        .Footer {
+            text-align: center;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.8);
+            margin-top: auto;
+            white-space: nowrap; /* 禁止换行 */
+        }
+        .Footer p {
+            margin: 0;
+            color: rgb(255, 255, 255);
+        }
+        .content {
+            flex: 1;
+        }
+        #search-suggestions {
+            position: absolute;
+            z-index: 1000;
+            background: white;
+            border: 1px solid #ccc;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        #search-suggestions li {
+            padding: 10px;
+            cursor: pointer;
+        }
+        #search-suggestions li:hover {
+            background-color: #f0f0f0;
+        }
+        .d-flex {
+            position: relative;
+        }
+    </style>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script>
+        function loadClient() {
+            gapi.client.setApiKey('AIzaSyD54Io6lReYzhUfjeh4y60wQZh4Z-yh93c');
+            return gapi.client.load('https://sheets.googleapis.com/$discovery/rest?version=v4')
+                .then(function() { console.log('GAPI client loaded for API'); },
+                      function(err) { console.error('Error loading GAPI client for API', err); });
+        }
+
+        function getSheetData() {
+            return gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId: '1L8ngUnzTGZ0LeNWHBujjxLNi1cjybuwWZtU2L_Y7bTA',
+                range: '出發吧麥芬!A1:B100',  // 假设鑽石在A列，費用在B列，从第一行开始
+            }).then(function(response) {
+                var range = response.result;
+                if (range.values && range.values.length > 0) {
+                    var tableBody = document.getElementById('game-info-table-body');
+                    tableBody.innerHTML = '';  // 清空表格內容
+                    range.values.forEach((row) => {
+                        var tr = document.createElement('tr');
+                        var td1 = document.createElement('td');
+                        var td2 = document.createElement('td');
+                        td1.textContent = row[0];
+                        td2.textContent = row[1];
+                        tr.appendChild(td1);
+                        tr.appendChild(td2);
+                        tableBody.appendChild(tr);
+                    });
+                    
+                }
+            }, function(response) {
+                console.error('Error: ' + response.result.error.message);
+            });
+        }
+
+        gapi.load('client', function() {
+            loadClient().then(getSheetData);
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const gameLinks = {
+                "巔峰極速": "https://yt-enen.github.io/closesite/game/巔峰極速.html",
+                "蛋仔派對": "https://yt-enen.github.io/closesite/game/蛋仔派對.html",
+                "Free Fire": "https://yt-enen.github.io/closesite/game/FreeFire.html",
+                "Roblox": "https://yt-enen.github.io/closesite/game/Roblox.html",
+                "原神": "https://yt-enen.github.io/closesite/game/原神.html",
+                "荒野亂鬥": "https://yt-enen.github.io/closesite/game/荒野亂鬥.html",
+                "雀魂": "https://yt-enen.github.io/closesite/game/雀魂.html",
+                "傳說對決": "https://yt-enen.github.io/closesite/game/傳說對決.html",
+                "星穹鐵道": "https://yt-enen.github.io/closesite/game/星穹鐵道.html",
+                "決勝時刻": "https://yt-enen.github.io/closesite/game/決勝時刻.html",
+                "寶可夢": "https://yt-enen.github.io/closesite/game/寶可夢.html",
+                "銀河特攻隊": "https://yt-enen.github.io/closesite/game/銀河特攻隊.html",
+                "部落衝突": "https://yt-enen.github.io/closesite/game/部落衝突.html",
+                "排球少年": "https://yt-enen.github.io/closesite/game/排球少年.html",
+                "出發吧麥芽": "https://yt-enen.github.io/closesite/game/出發吧麥芽.html",
+                "我獨自升級": "https://yt-enen.github.io/closesite/game/我獨自升級.html",
+                "PUBG": "https://yt-enen.github.io/closesite/game/PUBG.html",
+                "第五人格": "https://yt-enen.github.io/closesite/game/第五人格.html",
+                "全明星街頭派對": "https://yt-enen.github.io/closesite/game/全明星街頭派對.html",
+                "群星集結": "https://yt-enen.github.io/closesite/game/群星集結.html",
+                "女神異聞錄": "https://yt-enen.github.io/closesite/game/女神異聞錄.html",
+                "絕區零": "https://yt-enen.github.io/closesite/game/絕區零.html",
+                "鳴潮": "https://yt-enen.github.io/closesite/game/鳴潮.html",
+                "特戰英豪": "https://yt-enen.github.io/closesite/game/特戰英豪.html"
+            };
+
+            const searchInput = document.querySelector(".form-control");
+            const suggestions = document.createElement("ul");
+            suggestions.id = "search-suggestions";
+            document.querySelector(".d-flex").appendChild(suggestions);
+
+            searchInput.addEventListener("input", function() {
+                const query = searchInput.value.trim().toLowerCase();
+                suggestions.innerHTML = '';
+
+                if (query) {
+                    const matches = Object.keys(gameLinks).filter(game => game.toLowerCase().includes(query));
+                    matches.forEach(match => {
+                        const li = document.createElement("li");
+                        li.textContent = match;
+                        li.addEventListener("click", function() {
+                            window.location.href = gameLinks[match];
+                        });
+                        suggestions.appendChild(li);
+                    });
+                }
+            });
+
+            searchInput.addEventListener("keydown", function(event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    const query = searchInput.value.trim().toLowerCase();
+                    const match = Object.keys(gameLinks).find(game => game.toLowerCase().includes(query));
+                    if (match) {
+                        window.location.href = gameLinks[match];
+                    } else {
+                        alert("沒有找到相關的遊戲");
+                    }
+                }
+            });
+
+            document.addEventListener("click", function(event) {
+                if (!searchInput.contains(event.target)) {
+                    suggestions.innerHTML = '';
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="https://yt-enen.github.io/closesite/xhd.html">
+                <img src="game_PNG/XHD.png" alt="品牌圖像">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link color" aria-current="page" href="https://yt-enen.github.io/closesite/xhd.html">首頁</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link color" href="https://yt-enen.github.io/closesite/xhd.html">最新資訊</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link color" href="https://yt-enen.github.io/closesite/clothe.html">服飾專區</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link color" href="https://yt-enen.github.io/closesite/xhd.html">熱門遊戲代儲</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link color" href="https://yt-enen.github.io/closesite/xhd.html">所有手遊</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link color" href="https://liff.line.me/1645278921-kWRPP32q/?accountId=733wvmpd">聯絡我們</a>
+                    </li>
+                </ul>
+                <form class="d-flex position-relative">
+                    <input class="form-control me-2" type="search" placeholder="全站搜尋" aria-label="Search">
+                    <button class="btn btn-outline-success" type="submit">搜尋</button>
+                    <ul id="search-suggestions"></ul>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-0">
+        <div id="carouselExampleCaptions" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+                <button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                <button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="1" aria-label="Slide 2"></button>
+                <button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="2" aria-label="Slide 3"></button>
+            </div>
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <picture>
+                        <source media="(max-width: 1000px)" srcset="game_PNG/手機封面1.png">
+                        <img src="game_PNG/電腦封面1.png" class="d-block w-100" alt="第一張圖片">
+                    </picture>
+                    <div class="carousel-caption d-none d-md-block">
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <picture>
+                        <source media="(max-width: 1000px)" srcset="game_PNG/手機封面2.png">
+                        <img src="game_PNG/電腦封面2.png" class="d-block w-100" alt="第二張圖片">
+                    </picture>
+                    <div class="carousel-caption d-none d-md-block">
+                    </div>
+                </div>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">上一張</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">下一張</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="container mt-5 content">
+        <div class="row">
+            <div class="col-md-4 game-section">
+                <div class="game-image">
+                    <img src="game_PNG/mark/21.png" alt="遊戲圖像">
+                </div>
+                <div class="game-name">出發吧麥芬</div>
+                <br>
+                <a class="game-button" href="https://liff.line.me/1645278921-kWRPP32q/?accountId=733wvmpd">立即購買</a>
+                <br>
+            </div>
+            <div class="col-md-8 game-info">
+                <table>
+                    
+                    <tbody id="game-info-table-body">
+                        <!-- 表格內容將由JavaScript動態加載 -->
+                    </tbody>
+                </table>
+                <div class="update-time" id="update-time">
+                    <!-- 更新時間將由JavaScript動態加載 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="Footer">
+        <p>©2024 XHD ALL RIGHT RESERVERED。</p>
+    </div>
+    <br><br><br>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
